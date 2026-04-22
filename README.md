@@ -3,20 +3,20 @@
 A local semantic search engine for your personal files — notes, PDFs, and scanned images. No cloud, no API keys, no subscriptions.
 
 ```
-ask "Did I pay Diyas fees?"
+ask "Did I pay school fees?"
 ```
 
 ```
 ┌────────────────────────────────────────────────────────────────────────┐
-│  🔍 Query: Did I pay Diyas fees?                                       │
+│  🔍 Query: Did I pay school fees?                                      │
 └────────────────────────────────────────────────────────────────────────┘
 
   ┌─ Result 1 ──────────────────────────────────────────────────────────┐
-  │  📄 DiyaFees-2025-26-Q4.png  [School]
-  │  📁 /Users/you/Personal/School/Diya-2025/DiyaFees-2025-26-Q4.png
+  │  📄 SchoolFees-2025-26-Q4.png  [School]
+  │  📁 /Users/john/Personal/School/SchoolFees-2025-26-Q4.png
   ├─────────────────────────────────────────────────────────────────────┤
   │  FEE RECEIPT [2025-26]
-  │  Student: Diya  Amount: ₹12,500  Status: PAID
+  │  Student: John  Amount: ₹12,500  Status: PAID
   └─────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -65,10 +65,13 @@ Edit `config.json` and replace `<username>` with your actual macOS/Linux usernam
 {
   "folders": [
     "/Users/john/Documents/notes",
-    "/Users/john/Personal/School"
+    "/Users/john/Personal/School",
+    "/Users/john/Documents/obsidian-vault"
   ]
 }
 ```
+
+Obsidian vaults work great — Obsidian `[[links]]` and `#tags` are automatically stripped during indexing.
 
 You can add as many folders as you like.
 
@@ -89,7 +92,7 @@ Add to `~/.zshrc` or `~/.bashrc` to make it permanent.
 ### 4. Ask questions
 
 ```bash
-ask "Did I pay Bobs fees?"
+ask "Did I pay school fees?"
 ask "how do I deploy with KubeVela?"
 ask "what was the PR validation workflow?"
 ```

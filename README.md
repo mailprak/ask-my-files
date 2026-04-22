@@ -1,6 +1,6 @@
 # ask-my-files
 
-A local semantic search engine for your personal files — notes, PDFs, and scanned images. No cloud, no API keys, no subscriptions.
+A local semantic search engine for your personal files — notes, PDFs, and scanned images. Powered by ChromaDB for vector search and Ollama for local LLM answers. No cloud, no API keys, no subscriptions.
 
 ```
 ask "Did I pay school fees?"
@@ -11,28 +11,33 @@ ask "Did I pay school fees?"
 │  🔍 Query: Did I pay school fees?                                      │
 └────────────────────────────────────────────────────────────────────────┘
 
-  ┌─ Result 1 ──────────────────────────────────────────────────────────┐
-  │  📄 SchoolFees-2025-26-Q4.png  [School]
-  │  📁 /Users/john/Personal/School/SchoolFees-2025-26-Q4.png
-  ├─────────────────────────────────────────────────────────────────────┤
-  │  FEE RECEIPT [2025-26]
-  │  Student: John  Amount: ₹12,500  Status: PAID
-  └─────────────────────────────────────────────────────────────────────┘
+  💬 Answer:
+
+  Yes, the Q4 school fees of ₹12,500 were paid for 2025-26.
+
+  📂 Sources:
+     • SchoolFees-2025-26-Q4.png [School]
+     • receipt-2023.pdf [School]
 ```
 
 ## How It Works
 
-Your files are converted to text (via OCR for images, extraction for PDFs), then broken into chunks and stored as **vector embeddings** in a local [ChromaDB](https://www.trychroma.com/) database. When you ask a question, it is converted into a vector using the same embedding model and the closest matching chunks are returned — no keyword matching, pure semantic similarity.
+Your files are converted to text (via OCR for images, extraction for PDFs), broken into chunks, and stored as **vector embeddings** in a local [ChromaDB](https://www.trychroma.com/) database. When you ask a question:
+
+1. The query is converted into a vector and the closest matching chunks are retrieved
+2. The matching chunks are passed as context to a local LLM running via [Ollama](https://ollama.com)
+3. Ollama synthesises a direct answer based only on your files
+
+No keyword matching. No cloud. Everything stays on your machine.
 
 | Technology | Role |
 |---|---|
 | **ChromaDB** | Local vector database — stores and searches embeddings |
 | **all-MiniLM-L6-v2** | Sentence embedding model — converts text to vectors (~79MB, auto-downloaded) |
+| **Ollama (llama3.2)** | Local LLM — synthesises answers from retrieved chunks |
 | **pdfplumber** | Extracts text from PDF files |
 | **Tesseract + pytesseract** | OCR — extracts text from images (PNG, JPG, etc.) |
 | **Pillow** | Opens image files for OCR processing |
-
-Everything runs locally. No data leaves your machine.
 
 ## Supported File Types
 
@@ -43,7 +48,7 @@ Everything runs locally. No data leaves your machine.
 
 ## Requirements
 
-### System dependency (for image OCR)
+### 1. Install Tesseract (for image OCR)
 
 ```bash
 # macOS
@@ -53,7 +58,22 @@ brew install tesseract
 sudo apt install tesseract-ocr
 ```
 
-### Python dependencies
+### 2. Install Ollama (for local LLM answers)
+
+```bash
+# macOS
+brew install ollama
+
+# Or download from https://ollama.com
+```
+
+Pull the model:
+
+```bash
+ollama pull llama3.2
+```
+
+### 3. Install Python dependencies
 
 ```bash
 pip install -r requirements.txt
@@ -85,9 +105,7 @@ A `config.json` is included in the repo. Edit it and replace `<username>` with y
 }
 ```
 
-Obsidian vaults work great — Obsidian `[[links]]` and `#tags` are automatically stripped during indexing.
-
-You can add as many folders as you like.
+Obsidian vaults work great — `[[links]]` and `#tags` are automatically stripped during indexing. You can add as many folders as you like.
 
 ### 2. Index your files
 
@@ -95,7 +113,20 @@ You can add as many folders as you like.
 python3 injest.py
 ```
 
-### 3. Set up the `ask` alias
+```
+✅ Indexed: SchoolFees-Q4.png (1 chunk)
+✅ Indexed: receipt-2023.pdf (3 chunks)
+✅ Indexed: PR Validation Workflow.md (32 chunks)
+✅ All folders indexed into persistent memory
+```
+
+### 3. Start Ollama
+
+```bash
+ollama serve
+```
+
+### 4. Set up the `ask` alias
 
 ```bash
 alias ask="python3 /path/to/ask.py"
@@ -103,7 +134,7 @@ alias ask="python3 /path/to/ask.py"
 
 Add to `~/.zshrc` or `~/.bashrc` to make it permanent.
 
-### 4. Ask questions
+### 5. Ask questions
 
 ```bash
 ask "Did I pay school fees?"
@@ -145,4 +176,4 @@ print('Deleted', len(results['ids']), 'chunks')
 
 - The first run downloads the `all-MiniLM-L6-v2` embedding model (~79MB) to `~/.cache/chroma/`. This is a one-time download.
 - Re-running `injest.py` is safe — hash-based IDs prevent duplicates.
-- ChromaDB always returns the top 3 results even if none are relevant. If results look unrelated, the answer likely isn't in your indexed files.
+- Ollama answers are grounded in your files only — if the answer isn't in your indexed documents, it will say so.

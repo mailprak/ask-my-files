@@ -20,6 +20,20 @@ ask "Did I pay school fees?"
   └─────────────────────────────────────────────────────────────────────┘
 ```
 
+## How It Works
+
+Your files are converted to text (via OCR for images, extraction for PDFs), then broken into chunks and stored as **vector embeddings** in a local [ChromaDB](https://www.trychroma.com/) database. When you ask a question, it is converted into a vector using the same embedding model and the closest matching chunks are returned — no keyword matching, pure semantic similarity.
+
+| Technology | Role |
+|---|---|
+| **ChromaDB** | Local vector database — stores and searches embeddings |
+| **all-MiniLM-L6-v2** | Sentence embedding model — converts text to vectors (~79MB, auto-downloaded) |
+| **pdfplumber** | Extracts text from PDF files |
+| **Tesseract + pytesseract** | OCR — extracts text from images (PNG, JPG, etc.) |
+| **Pillow** | Opens image files for OCR processing |
+
+Everything runs locally. No data leaves your machine.
+
 ## Supported File Types
 
 - Markdown (`.md`) and plain text (`.txt`)

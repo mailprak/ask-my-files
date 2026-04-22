@@ -49,7 +49,7 @@ pip install -r requirements.txt
 
 ### 1. Configure your folders
 
-Edit `config.json` and replace `<username>` with your actual macOS/Linux username:
+A `config.json` is included in the repo. Edit it and replace `<username>` with your actual macOS/Linux username. If it doesn't exist, create it:
 
 ```json
 {

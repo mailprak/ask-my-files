@@ -13,7 +13,7 @@ ask "Did I pay school fees?"
 
   💬 Answer:
 
-  Yes, the Q4 school fees of ₹12,500 were paid for 2025-26.
+  Yes, the Q4 school fees of ₹1500 were paid for 2025-26.
 
   📂 Sources:
      • SchoolFees-2025-26-Q4.png [School]

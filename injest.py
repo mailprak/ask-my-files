@@ -30,6 +30,9 @@ def clean_text(text):
 def make_id(path, chunk):
     return hashlib.md5(f"{path}::{chunk}".encode()).hexdigest()
 
+indexed_ids = set()
+successfully_indexed = 0
+
 for base_path in folders:
     if not os.path.exists(base_path):
         print(f"⚠️ Skipping missing folder: {base_path}")
@@ -55,6 +58,7 @@ for base_path in folders:
                     # Store image OCR as a single chunk (no paragraph splitting)
                     content = clean_text(content)
                     if content.strip():
+                        chunk_id = make_id(full_path, content)
                         collection.upsert(
                             documents=[content],
                             metadatas=[{
@@ -62,8 +66,10 @@ for base_path in folders:
                                 "path": full_path,
                                 "folder": os.path.basename(base_path)
                             }],
-                            ids=[make_id(full_path, content)]
+                            ids=[chunk_id]
                         )
+                        indexed_ids.add(chunk_id)
+                        successfully_indexed += 1
                         print(f"✅ Indexed: {file} (1 chunk)")
                     continue
                 else:
@@ -76,6 +82,7 @@ for base_path in folders:
 
                 for chunk in chunks:
                     if chunk.strip():
+                        chunk_id = make_id(full_path, chunk)
                         collection.upsert(
                             documents=[chunk],
                             metadatas=[{
@@ -83,14 +90,29 @@ for base_path in folders:
                                 "path": full_path,
                                 "folder": os.path.basename(base_path)
                             }],
-                            ids=[make_id(full_path, chunk)]
+                            ids=[chunk_id]
                         )
+                        indexed_ids.add(chunk_id)
                         indexed += 1
 
+                successfully_indexed += indexed
                 if indexed:
                     print(f"✅ Indexed: {file} ({indexed} chunks)")
 
             except Exception as e:
                 print(f"⚠️ Error reading {full_path}: {e}")
+                existing = collection.get(where={"path": full_path})
+                indexed_ids.update(existing["ids"])
 
 print("✅ All folders indexed into persistent memory")
+
+# Prune stale chunks — skipped if nothing was indexed (safety guard against
+# empty/missing folders wiping the index)
+if successfully_indexed > 0:
+    all_stored = collection.get()
+    orphan_ids = set(all_stored["ids"]) - indexed_ids
+    if orphan_ids:
+        collection.delete(ids=list(orphan_ids))
+        print(f"🗑️  Pruned {len(orphan_ids)} stale chunk(s) from deleted or shortened files")
+    else:
+        print("✅ No stale chunks found")

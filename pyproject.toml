@@ -1,0 +1,11 @@
+[project]
+name = "ask-my-files"
+version = "0.1.0"
+requires-python = ">=3.10"
+dependencies = [
+    "chromadb",
+    "ollama",
+    "pdfplumber==0.11.9",
+    "pytesseract==0.3.13",
+    "Pillow==12.2.0",
+]

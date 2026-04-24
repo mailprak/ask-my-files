@@ -73,10 +73,20 @@ Pull the model:
 ollama pull llama3.2
 ```
 
-### 3. Install Python dependencies
+### 3. Install uv and sync dependencies
 
 ```bash
-pip install -r requirements.txt
+# macOS
+brew install uv
+
+# Or via pip
+pip install uv
+```
+
+Then install all Python dependencies:
+
+```bash
+uv sync
 ```
 
 ## Setup
@@ -110,7 +120,7 @@ Obsidian vaults work great — `[[links]]` and `#tags` are automatically strippe
 ### 2. Index your files
 
 ```bash
-python3 injest.py
+uv run injest.py
 ```
 
 ```
@@ -129,7 +139,7 @@ ollama serve
 ### 4. Set up the `ask` alias
 
 ```bash
-alias ask="python3 /path/to/ask.py"
+alias ask="uv run /path/to/ask.py"
 ```
 
 Add to `~/.zshrc` or `~/.bashrc` to make it permanent.
@@ -146,7 +156,7 @@ ask "what was the PR validation workflow?"
 
 **Wipe and rebuild:**
 ```bash
-rm -rf ./chroma_db && python3 injest.py
+rm -rf ./chroma_db && uv run injest.py
 ```
 
 **Check docs indexed from a specific folder:**

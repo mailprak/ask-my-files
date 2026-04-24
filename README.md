@@ -73,7 +73,9 @@ Pull the model:
 ollama pull llama3.2
 ```
 
-### 3. Install uv and sync dependencies
+### 3. Install Python dependencies
+
+**Option A — uv (recommended, faster):**
 
 ```bash
 # macOS
@@ -83,10 +85,17 @@ brew install uv
 pip install uv
 ```
 
-Then install all Python dependencies:
-
 ```bash
 uv sync
+```
+
+**Option B — plain venv:**
+
+```bash
+python3 -m venv venv
+source venv/bin/activate        # macOS/Linux
+# venv\Scripts\activate         # Windows
+pip install -r requirements.txt
 ```
 
 ## Setup
@@ -121,6 +130,7 @@ Obsidian vaults work great — `[[links]]` and `#tags` are automatically strippe
 
 ```bash
 uv run injest.py
+# or if using venv: python3 injest.py
 ```
 
 ```
@@ -140,6 +150,7 @@ ollama serve
 
 ```bash
 alias ask="uv run /path/to/ask.py"
+# or if using venv: alias ask="python3 /path/to/ask.py"
 ```
 
 Add to `~/.zshrc` or `~/.bashrc` to make it permanent.

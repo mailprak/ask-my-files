@@ -172,23 +172,32 @@ You can index and query structured learning courses separately from your persona
 | Course | Days | Topics |
 |---|---|---|
 | **golang** | 34 | Variables → Concurrency → HTTP → Generics → Microservices → k3d |
+| **kubernetes** | 30 | Architecture → Workloads → Storage → Networking → Security → Helm → Monitoring |
 
 ### Index a Course
 
 ```bash
 uv run injest.py --course golang
-# or: python3 injest.py --course golang
+uv run injest.py --course kubernetes
+# or: python3 injest.py --course <name>
 ```
 
 ### Ask Questions from Course Notes
 
 ```bash
-# Ask anything covered in the course
+# GoLang course
 ask --course golang "how does defer work?"
 ask --course golang "what is the difference between value and pointer receivers?"
 ask --course golang "show me how to use sync.WaitGroup"
 ask --course golang "how do I deploy a Go microservice to k3d?"
 ask --course golang "what HTTP status code should I return when a resource is not found?"
+
+# Kubernetes course
+ask --course kubernetes "what is the difference between a Role and a ClusterRole?"
+ask --course kubernetes "how do I configure a rolling update with zero downtime?"
+ask --course kubernetes "show me a NetworkPolicy that blocks all traffic by default"
+ask --course kubernetes "how does HPA work with custom metrics?"
+ask --course kubernetes "what is the difference between Helm and Kustomize?"
 ```
 
 Example output:
@@ -219,12 +228,29 @@ Example output:
 | 22–30 | Production: JSON, HTTP client/server, testing, benchmarks, generics, reflection |
 | 31–34 | Microservice: endpoints, middleware, file database, k3d deployment |
 
+### Kubernetes 30-Day Curriculum
+
+| Days | Topic Area |
+|---|---|
+| 1–2 | Architecture & kubectl: control plane, nodes, API server, core commands |
+| 3–6 | Core workloads: Pods, Deployments, Services, Namespaces, ResourceQuota |
+| 7–8 | Configuration: ConfigMaps, Secrets, Labels, Selectors, Annotations |
+| 9–11 | Advanced workloads: ReplicaSets, DaemonSets, StatefulSets, Jobs, CronJobs |
+| 12–14 | Storage: PersistentVolumes, PVCs, StorageClasses, resource limits, QoS |
+| 15–17 | Networking: network model, health probes, Ingress with NGINX |
+| 18–20 | Network policies: micro-segmentation, rolling updates, init containers, sidecars |
+| 21–22 | DNS: CoreDNS, service discovery, ExternalDNS, RBAC roles and bindings |
+| 23–25 | Security: ServiceAccounts, SecurityContexts, Pod Security Standards, Vault |
+| 26–28 | Operations: HPA, KEDA, Helm charts, Kustomize overlays |
+| 29–30 | Monitoring: Prometheus, Grafana, PromQL, capstone full-stack deployment |
+
 ### Re-index After Adding Notes
 
 Notes in any day file are yours to extend. After editing, just re-run ingest:
 
 ```bash
 uv run injest.py --course golang
+uv run injest.py --course kubernetes
 ```
 
 ### Add Your Own Course

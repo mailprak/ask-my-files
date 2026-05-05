@@ -1,27 +1,46 @@
 import chromadb
 import sys
+import argparse
 import ollama
 
-# Same DB path as ingestion
 client = chromadb.PersistentClient(path="./chroma_db")
 
-collection = client.get_collection(name="engineering_memory")
+parser = argparse.ArgumentParser(description="Ask questions about your files or a course")
+parser.add_argument("--course", type=str, help="Query a specific course (e.g., --course golang)")
+parser.add_argument("query", nargs="+", help="Your question")
+args = parser.parse_args()
 
-query = " ".join(sys.argv[1:])
+query = " ".join(args.query)
 
-if not query:
-    print("❌ Please provide a question")
-    print('Example: ask "why is my pod restarting?"')
-    sys.exit(1)
+if args.course:
+    collection_name = f"course_{args.course}"
+    try:
+        collection = client.get_collection(name=collection_name)
+    except Exception:
+        print(f"❌ Course '{args.course}' not found.")
+        print(f"   Run: python injest.py --course {args.course}")
+        sys.exit(1)
+    system_prompt = (
+        f"You are a {args.course.upper()} programming tutor. "
+        "Answer the question using only the learning notes provided below. "
+        "Include code examples from the notes where relevant."
+    )
+    not_found_msg = "I could not find this in your course notes."
+else:
+    collection = client.get_collection(name="engineering_memory")
+    system_prompt = (
+        "You are a helpful assistant. "
+        "Answer the question using only the context provided below."
+    )
+    not_found_msg = "I could not find this in your files."
 
 results = collection.query(
     query_texts=[query],
-    n_results=3
+    n_results=5
 )
 
 WIDTH = 72
 
-# Build context from retrieved chunks
 chunks = results["documents"][0]
 metas = results["metadatas"][0]
 
@@ -30,9 +49,8 @@ context = "\n\n".join(
     for doc, meta in zip(chunks, metas)
 )
 
-# Ask Ollama to answer based on context
-prompt = f"""You are a helpful assistant. Answer the question using only the context provided below.
-If the answer is not in the context, say "I could not find this in your files."
+prompt = f"""{system_prompt}
+If the answer is not in the context, say "{not_found_msg}"
 
 Context:
 {context}
@@ -42,7 +60,13 @@ Answer:"""
 
 print()
 print("┌" + "─" * WIDTH + "┐")
-print(f"│  🔍 Query: {query:<{WIDTH - 12}}│")
+if args.course:
+    label = f"📚 [{args.course.upper()}] "
+    truncated = query[:WIDTH - len(label) - 2]
+    print(f"│  {label}{truncated:<{WIDTH - len(label) - 2}}│")
+else:
+    truncated = query[:WIDTH - 12]
+    print(f"│  🔍 Query: {truncated:<{WIDTH - 12}}│")
 print("└" + "─" * WIDTH + "┘")
 
 print("\n  💬 Answer:\n")
@@ -60,5 +84,6 @@ for line in answer.splitlines():
 print()
 print("  📂 Sources:")
 for meta in metas:
-    print(f"     • {meta['source']} [{meta['folder']}]")
+    label = meta.get("folder", "")
+    print(f"     • {meta['source']} [{label}]")
 print()

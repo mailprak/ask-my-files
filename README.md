@@ -163,6 +163,161 @@ ask "how do I deploy with KubeVela?"
 ask "what was the PR validation workflow?"
 ```
 
+## Courses — Structured Learning
+
+You can index and query structured learning courses separately from your personal files. Courses live in `courses/<name>/` and get their own isolated ChromaDB collection.
+
+### Available Courses
+
+| Course | Days | Topics |
+|---|---|---|
+| **golang** | 34 | Variables → Concurrency → HTTP → Generics → Microservices → k3d |
+
+### Index a Course
+
+```bash
+uv run injest.py --course golang
+# or: python3 injest.py --course golang
+```
+
+### Ask Questions from Course Notes
+
+```bash
+# Ask anything covered in the course
+ask --course golang "how does defer work?"
+ask --course golang "what is the difference between value and pointer receivers?"
+ask --course golang "show me how to use sync.WaitGroup"
+ask --course golang "how do I deploy a Go microservice to k3d?"
+ask --course golang "what HTTP status code should I return when a resource is not found?"
+```
+
+Example output:
+```
+┌────────────────────────────────────────────────────────────────────────┐
+│  📚 [GOLANG] how does defer work?                                      │
+└────────────────────────────────────────────────────────────────────────┘
+
+  💬 Answer:
+
+  defer schedules a function call to run when the surrounding function
+  returns — no matter how it returns (normal, error, or panic). Multiple
+  defers run in LIFO order. Arguments are evaluated immediately at the
+  defer call, not when it executes.
+
+  📂 Sources:
+     • day-13-defer-panic-recover.md [golang]
+     • day-08-structs-methods.md [golang]
+```
+
+### GoLang 34-Day Curriculum
+
+| Days | Topic Area |
+|---|---|
+| 1–7 | Foundations: variables, types, constants, functions, control flow, slices, maps |
+| 8–14 | OOP: structs, pointers, interfaces, embedding, error handling, defer, modules |
+| 15–21 | Concurrency: goroutines, channels, select, sync, context, patterns, file I/O |
+| 22–30 | Production: JSON, HTTP client/server, testing, benchmarks, generics, reflection |
+| 31–34 | Microservice: endpoints, middleware, file database, k3d deployment |
+
+### Re-index After Adding Notes
+
+Notes in any day file are yours to extend. After editing, just re-run ingest:
+
+```bash
+uv run injest.py --course golang
+```
+
+### Add Your Own Course
+
+You can create a course on any topic using the same structure as the GoLang course.
+
+**Step 1 — Create the course folder**
+
+```bash
+mkdir -p courses/rust
+```
+
+**Step 2 — Name your files consistently**
+
+Use the `day-NN-topic-name.md` convention so files sort correctly:
+
+```
+courses/rust/
+├── day-01-hello-world-cargo.md
+├── day-02-variables-mutability.md
+├── day-03-ownership.md
+...
+```
+
+**Step 3 — Use this template for each day's file**
+
+```markdown
+# Day NN — Topic Title
+
+## Learning Objectives
+- What you will be able to do after this day
+- Keep to 3–5 bullet points
+
+---
+
+## Core Concept
+
+Explain the concept in plain English first, then show code.
+
+```go  ← replace with the language
+// A working, runnable example
+func example() {
+    // ...
+}
+```
+
+## Sub-topic
+
+More concepts, more examples. Break each idea into its own section.
+
+---
+
+## Gotchas
+
+1. **Common mistake** — explain why it trips people up and how to avoid it.
+2. **Another pitfall** — with a before/after code comparison if helpful.
+
+---
+
+## Practice
+
+1. Exercise that reinforces the first concept.
+2. Exercise that combines today's topic with a previous day.
+3. A stretch exercise for deeper understanding.
+
+---
+
+## Key Takeaways
+
+- The 3–5 things to remember from today, in one line each.
+```
+
+**Step 4 — Index the course**
+
+```bash
+uv run injest.py --course rust
+```
+
+**Step 5 — Start asking**
+
+```bash
+ask --course rust "what is ownership?"
+ask --course rust "how does the borrow checker work?"
+```
+
+**Tips for good course notes:**
+- Keep each day focused on **one theme** — don't cram too many topics into a single file
+- Always include **runnable code examples** — the LLM retrieves these verbatim when you ask for examples
+- Write **Gotchas** — these are the highest-value sections when you're debugging real code
+- Add your own notes as you learn — the more personal context, the better the answers
+
+---
+
 ## Managing the Index
 
 **Wipe and rebuild:**

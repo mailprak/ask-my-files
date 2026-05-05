@@ -1,34 +1,48 @@
 import os
 import json
 import hashlib
+import argparse
 import chromadb
 import re
 import pdfplumber
 from PIL import Image
 import pytesseract
 
-# Load config
-with open("config.json") as f:
-    config = json.load(f)
+parser = argparse.ArgumentParser(description="Index files into ChromaDB")
+parser.add_argument("--course", type=str, help="Index a course (e.g., --course golang)")
+args = parser.parse_args()
 
-folders = config.get("folders", [])
-
-if not folders:
-    print("❌ No folders configured")
-    exit(1)
-
-# ✅ Persistent DB
 client = chromadb.PersistentClient(path="./chroma_db")
 
-collection = client.get_or_create_collection(name="engineering_memory")
+if args.course:
+    course_path = os.path.join(".", "courses", args.course)
+    if not os.path.exists(course_path):
+        print(f"❌ Course folder not found: {course_path}")
+        exit(1)
+    folders = [course_path]
+    collection_name = f"course_{args.course}"
+    print(f"📚 Indexing course '{args.course}' from {course_path}")
+else:
+    with open("config.json") as f:
+        config = json.load(f)
+    folders = config.get("folders", [])
+    collection_name = "engineering_memory"
+    if not folders:
+        print("❌ No folders configured")
+        exit(1)
+
+collection = client.get_or_create_collection(name=collection_name)
+
 
 def clean_text(text):
     text = re.sub(r"\[\[.*?\]\]", "", text)  # remove Obsidian links
-    text = re.sub(r"#\w+", "", text)        # remove tags
+    text = re.sub(r"#\w+", "", text)         # remove tags
     return text
+
 
 def make_id(path, chunk):
     return hashlib.md5(f"{path}::{chunk}".encode()).hexdigest()
+
 
 indexed_ids = set()
 successfully_indexed = 0
@@ -40,7 +54,6 @@ for base_path in folders:
 
     for root, _, files in os.walk(base_path):
         for file in files:
-            # Skip hidden and system files
             if file.startswith("."):
                 continue
 
@@ -55,7 +68,6 @@ for base_path in folders:
                             content += (page.extract_text() or "") + "\n\n"
                 elif ext in ("png", "jpg", "jpeg", "tiff", "bmp"):
                     content = pytesseract.image_to_string(Image.open(full_path))
-                    # Store image OCR as a single chunk (no paragraph splitting)
                     content = clean_text(content)
                     if content.strip():
                         chunk_id = make_id(full_path, content)
@@ -104,10 +116,11 @@ for base_path in folders:
                 existing = collection.get(where={"path": full_path})
                 indexed_ids.update(existing["ids"])
 
-print("✅ All folders indexed into persistent memory")
+if args.course:
+    print(f"✅ Course '{args.course}' indexed into collection '{collection_name}'")
+else:
+    print("✅ All folders indexed into persistent memory")
 
-# Prune stale chunks — skipped if nothing was indexed (safety guard against
-# empty/missing folders wiping the index)
 if successfully_indexed > 0:
     all_stored = collection.get()
     orphan_ids = set(all_stored["ids"]) - indexed_ids

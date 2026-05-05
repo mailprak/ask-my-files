@@ -146,7 +146,29 @@ uv run injest.py
 ollama serve
 ```
 
-### 4. Set up the `ask` alias
+### 4. Ask questions
+
+**Option A — Web UI (recommended)**
+
+```bash
+uv run streamlit run app.py
+# or with venv: streamlit run app.py
+```
+
+Opens at `http://localhost:8501`. Features:
+- Collection picker — switch between personal files and any indexed course
+- Streaming answers — response appears token by token
+- Sources panel — collapsible list of files used for the answer
+- Chat history — full conversation per session
+- Model switcher — swap between llama3.2, mistral, gemma2
+
+**Option B — CLI**
+
+```bash
+ask "Did I pay school fees?"
+ask "how do I deploy with KubeVela?"
+ask "what was the PR validation workflow?"
+```
 
 ```bash
 alias ask="uv run /path/to/ask.py"
@@ -154,14 +176,6 @@ alias ask="uv run /path/to/ask.py"
 ```
 
 Add to `~/.zshrc` or `~/.bashrc` to make it permanent.
-
-### 5. Ask questions
-
-```bash
-ask "Did I pay school fees?"
-ask "how do I deploy with KubeVela?"
-ask "what was the PR validation workflow?"
-```
 
 ## Courses — Structured Learning
 
@@ -173,6 +187,8 @@ You can index and query structured learning courses separately from your persona
 |---|---|---|
 | **golang** | 34 | Variables → Concurrency → HTTP → Generics → Microservices → k3d |
 | **kubernetes** | 30 | Architecture → Workloads → Storage → Networking → Security → Helm → Monitoring |
+| **kubevela** | 12 | OAM concepts → Components → Traits → Policies → Workflows → Multi-cluster → GitOps |
+| **crossplane** | 12 | Control plane pattern → Providers → Managed Resources → XRDs → Compositions → Claims → GitOps |
 
 ### Index a Course
 
@@ -198,6 +214,20 @@ ask --course kubernetes "how do I configure a rolling update with zero downtime?
 ask --course kubernetes "show me a NetworkPolicy that blocks all traffic by default"
 ask --course kubernetes "how does HPA work with custom metrics?"
 ask --course kubernetes "what is the difference between Helm and Kustomize?"
+
+# Crossplane course
+ask --course crossplane "what is the difference between an XRD and a Composition?"
+ask --course crossplane "how do I write a Composition that maps size: small to an RDS instance class?"
+ask --course crossplane "what is deletionPolicy: Orphan and when should I use it?"
+ask --course crossplane "how do I use provider-kubernetes to sync a secret between namespaces?"
+ask --course crossplane "how do I build and publish a Crossplane Configuration package?"
+
+# KubeVela course
+ask --course kubevela "what is the difference between a Component and a Trait?"
+ask --course kubevela "how do I add a manual approval gate in a workflow?"
+ask --course kubevela "show me how to write a custom ComponentDefinition in CUE"
+ask --course kubevela "how do I deploy to multiple clusters with topology policies?"
+ask --course kubevela "how does KubeVela integrate with ArgoCD for GitOps?"
 ```
 
 Example output:
@@ -227,6 +257,40 @@ Example output:
 | 15–21 | Concurrency: goroutines, channels, select, sync, context, patterns, file I/O |
 | 22–30 | Production: JSON, HTTP client/server, testing, benchmarks, generics, reflection |
 | 31–34 | Microservice: endpoints, middleware, file database, k3d deployment |
+
+### Crossplane 12-Day Curriculum
+
+| Days | Topic Area |
+|---|---|
+| 1 | Control plane pattern: why Crossplane, vs Terraform, core building blocks |
+| 2 | Install on k3d, crossplane CLI, provider-nop for credential-free practice |
+| 3 | Providers: AWS/GCP/Azure installation, ProviderConfig, IRSA/Workload Identity |
+| 4 | Managed Resources: S3, RDS, VPC, GCS — forProvider, deletionPolicy, cross-refs |
+| 5 | CompositeResourceDefinitions (XRDs): define the platform API with OpenAPI schema |
+| 6 | Compositions: patches, transforms (map/convert/string/math), connection details |
+| 7 | Claims: developer self-service, RBAC, connection secrets in app namespace |
+| 8 | Composition Functions: function-kcl for conditionals, Go functions for custom logic |
+| 9 | Packages: build Configuration packages as OCI images, version, distribute |
+| 10 | provider-kubernetes + provider-helm: manage K8s resources and Helm releases as MRs |
+| 11 | GitOps: ArgoCD sync waves, FluxCD dependsOn, drift detection, GitOps-safe secrets |
+| 12 | Capstone: full internal developer platform — one Claim provisions everything |
+
+### KubeVela 12-Day Curriculum
+
+| Days | Topic Area |
+|---|---|
+| 1 | OAM concepts: Component, Trait, Policy, Workflow — the four primitives |
+| 2 | Install on k3d, vela CLI, VelaUX dashboard, first Application |
+| 3 | Built-in components: webservice, worker, task, cron-task, daemon |
+| 4 | Built-in traits: ingress, scaler, resource, sidecar, labels, annotations |
+| 5 | Policies: override (per-env config), topology (cluster/namespace targeting) |
+| 6 | Workflow steps: deploy, suspend (approval gates), notification, step-group |
+| 7 | Multi-cluster: hub-spoke model, cluster registration, cluster selectors |
+| 8 | Custom definitions: ComponentDefinition in CUE, Helm wrapping, TraitDefinition |
+| 9 | Addon ecosystem: FluxCD, Argo Rollouts (canary/blue-green), Prometheus, Terraform |
+| 10 | GitOps: ApplicationRevision, ArgoCD integration, CI/CD pipeline patterns |
+| 11 | Observability: prometheus-scrape trait, VelaUX, Loki, debug commands |
+| 12 | Capstone: full multi-tier app with custom definitions, workflow, monitoring |
 
 ### Kubernetes 30-Day Curriculum
 

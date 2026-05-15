@@ -308,6 +308,141 @@ Example output:
 | 26–28 | Operations: HPA, KEDA, Helm charts, Kustomize overlays |
 | 29–30 | Monitoring: Prometheus, Grafana, PromQL, capstone full-stack deployment |
 
+---
+
+## New Features
+
+### Gap Detector — Audit Course Coverage
+
+Audits your indexed course notes against a built-in topic checklist and shows which areas are well-covered, thin, or missing entirely.
+
+```bash
+uv run audit.py --course golang
+uv run audit.py --course kubernetes
+uv run audit.py --course kubevela
+uv run audit.py --course crossplane
+```
+
+Example output:
+
+```
+┌────────────────────────────────────────────────────────────────────────┐
+│  🔍 Gap Report: GOLANG                                                 │
+├────────────────────────────────────────────────────────────────────────┤
+│  ▸ Foundations                                                         │
+│     ✅  variables types zero values                             0.412  │
+│     ✅  functions multiple return values                        0.521  │
+│     ⚠️   control flow if else switch                             0.934  │
+│     ❌  pointers address dereferencing                          1.341  │
+│                                                                        │
+│  ▸ Concurrency                                                         │
+│     ✅  goroutines go keyword                                   0.388  │
+│     ✅  channels buffered unbuffered                            0.471  │
+│     ⚠️   worker pool pattern                                     1.089  │
+│                                                                        │
+├────────────────────────────────────────────────────────────────────────┤
+│  Total: 30  ✅ 22 covered  ⚠️  5 thin  ❌ 3 missing               │
+└────────────────────────────────────────────────────────────────────────┘
+```
+
+**Distance thresholds** (ChromaDB cosine distance, 0 = identical, 2 = maximally dissimilar):
+
+| Status | Distance | Meaning |
+|---|---|---|
+| ✅ Covered | < 0.80 | Strong match in your notes |
+| ⚠️ Thin | 0.80 – 1.20 | Mentioned but not deeply covered |
+| ❌ Missing | > 1.20 | No relevant content found |
+
+For custom courses without a built-in checklist, the audit falls back to querying by source filename.
+
+---
+
+### Cross-Course Connections — Compare Technologies Side by Side
+
+Queries all indexed course collections simultaneously and synthesises a comparative answer highlighting similarities, differences, and when to prefer each technology.
+
+**CLI:**
+```bash
+uv run ask.py --cross "how does Crossplane compare to KubeVela for platform engineering?"
+uv run ask.py --cross "what are the differences between goroutines and Kubernetes Jobs?"
+uv run ask.py --cross "which tool would I use to manage secrets across clusters?"
+```
+
+Example output:
+```
+┌────────────────────────────────────────────────────────────────────────┐
+│  🔀 Cross-Course: how does Crossplane compare to KubeVela?             │
+└────────────────────────────────────────────────────────────────────────┘
+
+  💬 Answer:
+
+  CROSSPLANE: Focuses on provisioning and managing cloud infrastructure
+  as Kubernetes resources. Uses XRDs and Compositions to build a
+  platform API. Best when you need infrastructure-as-code with K8s.
+
+  KUBEVELA: Focuses on application delivery using the OAM model.
+  Defines Components, Traits, and Workflows. Best when you need
+  multi-cluster app deployment with approval workflows.
+
+  📂 Sources by course:
+     [CROSSPLANE]
+       • day-05-xrds.md [crossplane]
+     [KUBEVELA]
+       • day-01-oam-concepts.md [kubevela]
+```
+
+`--cross` and `--course` are mutually exclusive.
+
+**Web UI:** Select **🔀 Cross-Course** from the collection dropdown (appears when 2+ courses are indexed).
+
+---
+
+### Teach Me Mode — Generate a Quiz from Course Notes
+
+Generates a 5-question quiz from your indexed course notes. Optionally filter by day to focus on a specific topic.
+
+**CLI:**
+```bash
+# Full-course quiz
+uv run ask.py --course golang --quiz
+
+# Day-specific quiz
+uv run ask.py --course golang --quiz day-13
+uv run ask.py --course kubernetes --quiz day-21
+```
+
+Example output:
+```
+┌────────────────────────────────────────────────────────────────────────┐
+│  🎓 [GOLANG] Quiz — day-13                                             │
+└────────────────────────────────────────────────────────────────────────┘
+
+  Q1: What does the defer keyword do in Go?
+      defer schedules a function call to run when the surrounding
+      function returns. Multiple defers run in LIFO order.
+
+  Q2: When would you use recover()?
+      recover() stops a panic and returns the panic value. It must
+      be called inside a deferred function to have any effect.
+
+  Q3: What is the difference between panic and os.Exit?
+      panic unwinds the stack and runs deferred functions. os.Exit
+      terminates immediately without running defers.
+
+  Q4: Can you defer a method call?
+      Yes. defer works with any function or method call, including
+      method calls on struct values.
+
+  Q5: What happens if defer arguments reference a variable that
+      changes after the defer statement?
+      Arguments are evaluated immediately at the defer call site,
+      not when the deferred function executes.
+```
+
+**Web UI:** Select a course, then use the **Teach Me** panel in the sidebar. Enter an optional day filter and click **🎓 Quiz Me**.
+
+---
+
 ### Re-index After Adding Notes
 
 Notes in any day file are yours to extend. After editing, just re-run ingest:

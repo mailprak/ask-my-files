@@ -244,7 +244,7 @@ components:
   - name: db
     type: postgresql
     properties:
-      password: mysecretpassword
+      password: password
       database: taskapp
       storageSize: "20Gi"
 ```

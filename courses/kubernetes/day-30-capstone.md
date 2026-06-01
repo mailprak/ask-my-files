@@ -119,7 +119,7 @@ kubectl apply -f https://github.com/bitnami-labs/sealed-secrets/releases/downloa
 
 # Create and seal DB secret
 kubectl create secret generic db-secret \
-  --from-literal=POSTGRES_PASSWORD=taskapp_prod_pass \
+  --from-literal=POSTGRES_PASSWORD=password \
   --from-literal=POSTGRES_USER=taskapp \
   --from-literal=POSTGRES_DB=tasks \
   --namespace=taskapp \
@@ -558,7 +558,7 @@ echo "127.0.0.1 taskapp.local" | sudo tee -a /etc/hosts
 helm upgrade --install monitoring prometheus-community/kube-prometheus-stack \
   --namespace monitoring \
   --create-namespace \
-  --set grafana.adminPassword=admin123
+  --set grafana.adminPassword=password
 ```
 
 ```yaml

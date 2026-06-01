@@ -51,9 +51,9 @@ k3d cluster create hub \
 vela install
 
 # Enable addons
-vela addon enable velaux --set "adminPassword=admin123"
+vela addon enable velaux --set "adminPassword=password"
 vela addon enable fluxcd
-vela addon enable observability --set "grafana.adminPassword=admin123"
+vela addon enable observability --set "grafana.adminPassword=password"
 vela addon enable rollout
 
 # Verify
@@ -230,7 +230,7 @@ spec:
         version: "13.x.x"
         values:
           auth:
-            postgresPassword: taskapppassword
+            postgresPassword: password
             database: taskapp
           primary:
             persistence:

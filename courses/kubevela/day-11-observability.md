@@ -27,7 +27,7 @@ Applications → Metrics (Prometheus) → Visualise (Grafana)
 ```bash
 # Enable the full observability stack
 vela addon enable observability \
-  --set grafana.adminPassword=admin123
+  --set grafana.adminPassword=password
 
 # Or enable components separately
 vela addon enable prometheus-server
@@ -38,7 +38,7 @@ kubectl get pods -n vela-system | grep -E "prometheus|grafana|loki"
 
 # Access Grafana
 vela port-forward addon-grafana -n vela-system 3000:80
-# http://localhost:3000  admin / admin123
+# http://localhost:3000  admin / password
 ```
 
 ---
@@ -49,7 +49,7 @@ VelaUX shows real-time health of all Applications:
 
 ```bash
 # Enable VelaUX (if not already)
-vela addon enable velaux --set "adminPassword=VelaUX12345"
+vela addon enable velaux --set "adminPassword=password"
 
 # Access
 vela port-forward addon-velaux -n vela-system 8080:80

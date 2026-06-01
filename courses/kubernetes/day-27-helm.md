@@ -44,7 +44,7 @@ helm install my-postgres bitnami/postgresql \
 # Install with custom values
 helm install my-postgres bitnami/postgresql \
   --namespace production \
-  --set auth.postgresPassword=mysecretpassword \
+  --set auth.postgresPassword=password \
   --set primary.persistence.size=10Gi
 
 # Install from a values file

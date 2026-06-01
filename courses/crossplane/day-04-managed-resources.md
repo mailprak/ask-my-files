@@ -149,7 +149,7 @@ metadata:
   namespace: crossplane-system
 type: Opaque
 stringData:
-  password: "MySecurePassword123!"
+  password: "password"
 ```
 
 ```bash

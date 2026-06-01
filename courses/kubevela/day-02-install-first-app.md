@@ -260,7 +260,7 @@ kubectl get all -n taskapp
 ## Gotchas
 
 1. **`vela install` requires cluster-admin** — KubeVela installs CRDs and cluster-scoped resources. Run with sufficient permissions.
-2. **VelaUX default password** — change it immediately: `vela addon enable velaux --set "adminPassword=yourpassword"`.
+2. **VelaUX default password** — change it immediately: `vela addon enable velaux --set "adminPassword=password"`.
 3. **`vela status` vs `kubectl get application`** — `vela status` is richer (shows component health). `kubectl get application` shows the raw CR status.
 4. **Deleting an Application deletes all child resources** — including PVCs. Be careful in production. Use `--orphan` flag to detach without deleting: `vela delete myapp --orphan`.
 

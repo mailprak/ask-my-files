@@ -290,7 +290,7 @@ configMapGenerator:
 secretGenerator:
   - name: db-secret
     literals:
-      - password=mysecretpassword
+      - password=password
     type: Opaque
     options:
       disableNameSuffixHash: true

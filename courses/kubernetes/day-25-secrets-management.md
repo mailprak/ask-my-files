@@ -53,7 +53,7 @@ kubeseal --fetch-cert > pub-cert.pem
 ```bash
 # Step 1: Create a regular Secret (do NOT apply it to the cluster)
 kubectl create secret generic db-password \
-  --from-literal=password=supersecret123 \
+  --from-literal=password=password \
   --dry-run=client \
   -o yaml > secret-plain.yaml
 
@@ -141,7 +141,7 @@ vault write auth/kubernetes/config \
 # Write a secret
 vault secrets enable -path=secret kv-v2
 vault kv put secret/production/db \
-  password="supersecret123" \
+  password="password" \
   username="dbuser"
 
 # Create a policy

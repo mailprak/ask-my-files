@@ -141,7 +141,7 @@ metadata:
 type: Opaque                        # generic key-value secret
 
 stringData:                         # plain text — Kubernetes base64-encodes it
-  DB_PASSWORD: "supersecret123"
+  DB_PASSWORD: "password"
   API_KEY: "sk-abc123xyz789"
   JWT_SECRET: "my-jwt-signing-key"
 
@@ -264,7 +264,7 @@ data:
 kubectl create secret docker-registry registry-creds \
   --docker-server=myregistry.io \
   --docker-username=myuser \
-  --docker-password=mypassword
+  --docker-password=password
 
 # Reference in Pod
 spec:
@@ -294,7 +294,7 @@ metadata:
   name: app-secrets
 type: Opaque
 stringData:
-  DB_PASSWORD: "securepass"
+  DB_PASSWORD: "password"
   API_KEY: "sk-abc123"
 ---
 apiVersion: apps/v1

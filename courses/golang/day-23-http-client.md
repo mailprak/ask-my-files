@@ -164,7 +164,7 @@ func getUser(ctx context.Context, id int) (*User, error) {
 ```go
 form := url.Values{}
 form.Set("username", "alice")
-form.Set("password", "secret")
+form.Set("password", "password")
 
 resp, err := client.Post(
     "https://example.com/login",

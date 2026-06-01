@@ -60,7 +60,7 @@ metadata:
 type: Opaque
 stringData:
   POSTGRES_USER: "myuser"
-  POSTGRES_PASSWORD: "mysecretpassword"
+  POSTGRES_PASSWORD: "password"
   POSTGRES_DB: "mydb"
 ---
 apiVersion: apps/v1

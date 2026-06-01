@@ -38,8 +38,8 @@ vela addon list
 ```bash
 # Enable an addon
 vela addon enable fluxcd
-vela addon enable velaux --set "adminPassword=securepassword"
-vela addon enable prometheus --set "grafana.adminPassword=admin123"
+vela addon enable velaux --set "adminPassword=password"
+vela addon enable prometheus --set "grafana.adminPassword=password"
 
 # Enable with specific version
 vela addon enable rollout --version 1.9.0
@@ -85,7 +85,7 @@ spec:
         version: "18.x.x"
         values:
           auth:
-            password: myredispassword
+            password: password
           master:
             persistence:
               size: 5Gi
@@ -102,7 +102,7 @@ spec:
         version: "13.x.x"
         values:
           auth:
-            postgresPassword: mydbpassword
+            postgresPassword: password
             database: taskapp
 ```
 
@@ -181,7 +181,7 @@ traits:
 ## Prometheus Addon — Built-in Monitoring
 
 ```bash
-vela addon enable prometheus --set "grafana.adminPassword=admin123"
+vela addon enable prometheus --set "grafana.adminPassword=password"
 
 # Access Grafana
 vela port-forward addon-prometheus-server -n vela-system 9090:9090
@@ -253,7 +253,7 @@ spec:
         instance_class: db.t3.micro
         db_name: taskapp
         username: taskapp
-        password: mysecretpassword
+        password: password
         engine: postgres
         engine_version: "15"
 

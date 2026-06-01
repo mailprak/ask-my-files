@@ -33,7 +33,7 @@ helm repo update
 helm upgrade --install monitoring prometheus-community/kube-prometheus-stack \
   --namespace monitoring \
   --create-namespace \
-  --set grafana.adminPassword=admin123 \
+  --set grafana.adminPassword=password \
   --set prometheus.prometheusSpec.retention=7d \
   --set prometheus.prometheusSpec.storageSpec.volumeClaimTemplate.spec.resources.requests.storage=10Gi
 

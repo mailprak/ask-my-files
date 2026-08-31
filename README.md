@@ -452,9 +452,9 @@ Example output:
 
 Turns a retrieved answer into a short animated GIF of the data flow: actors as labelled
 stations across the stage, requests travelling between them on routed arrows, processing
-states, and success or failure badges. Useful for anything with moving parts — a SCIM
-provisioning round trip, Pod scheduling, a goroutine sending on a channel, a Crossplane
-claim reconciling.
+states, and success or failure badges. Useful for anything with moving parts — Pod
+scheduling, a goroutine sending on a channel, a Crossplane claim reconciling, a request
+crossing a gateway.
 
 Nothing about it is topic-specific: it works on every collection, personal files included.
 
@@ -481,22 +481,21 @@ fails with a readable message instead of a broken picture.
 
 ```json
 {
-  "title": "SCIM user provisioning",
+  "title": "Kubernetes — creating a Pod",
   "actors": [
-    {"id": "idp",    "label": "Identity Provider", "kind": "person"},
-    {"id": "scim",   "label": "SCIM Connect",      "kind": "service"},
-    {"id": "target", "label": "Target App",        "kind": "cloud"}
+    {"id": "kubectl", "label": "kubectl",    "kind": "client"},
+    {"id": "api",     "label": "API Server", "kind": "service"},
+    {"id": "etcd",    "label": "etcd",       "kind": "store"}
   ],
   "scenes": [
-    {"kind": "message", "from": "idp", "to": "scim", "label": "POST /Users",
-     "detail": "The source IdP sends a SCIM user resource."},
-    {"kind": "process", "at": "scim", "label": "Map attributes",
-     "detail": "Attributes are mapped onto the target schema."},
-    {"kind": "message", "from": "scim", "to": "target", "label": "POST /Users"},
-    {"kind": "message", "from": "target", "to": "scim", "label": "201 Created",
+    {"kind": "message", "from": "kubectl", "to": "api", "label": "apply pod.yaml",
+     "detail": "The developer submits a Pod manifest to the API server."},
+    {"kind": "process", "at": "api", "label": "Admit and validate",
+     "detail": "The request is authenticated, authorised and checked against admission rules."},
+    {"kind": "message", "from": "api", "to": "etcd", "label": "Persist desired state",
      "status": "success"},
-    {"kind": "result", "at": "target", "label": "User provisioned", "status": "success",
-     "detail": "The account now exists downstream."}
+    {"kind": "result", "at": "etcd", "label": "Object stored", "status": "success",
+     "detail": "The accepted object becomes the cluster's source of truth."}
   ]
 }
 ```
@@ -580,8 +579,8 @@ copy gets fixed up first, because TTS engines mangle technical prose:
 | `POST /Users` | "POST Users" — not "post slash users" |
 | `201 Created` | "two oh one Created" — not "two hundred and one" |
 | `userName`, `externalId` | "user Name", "external Id" |
-| `SCIM`, `etcd`, `kubectl` | "skim", "et see dee", "cube control" |
-| `SCIM Connect — user provisioning` | "skim Connect, user provisioning" |
+| `etcd`, `kubectl`, `nginx` | "et see dee", "cube control", "engine ex" |
+| `Kubernetes — creating a Pod` | "Kubernetes, creating a Pod" |
 
 Lines are then joined with positional connectives — *First… Then… Next… After that…
 Finally…* — and topped and tailed with an intro and a closing line, so it plays as a
@@ -627,7 +626,7 @@ reason reported.
 look or checking the pipeline while Ollama is off:
 
 ```bash
-uv run animate.py --demo out/demo.gif                 # built-in SCIM storyboard
+uv run animate.py --demo out/demo.gif                 # built-in demo storyboard
 uv run animate.py --json board.json out/board.gif     # your own storyboard JSON
 uv run animate.py --demo out/demo.gif --png out/f.png # + one still per scene
 uv run animate.py --demo out/demo.webp                # WebP: full colour, no 256-colour cap

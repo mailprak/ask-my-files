@@ -9,8 +9,8 @@ exactly the same length and loop together.
 Two things separate this from reading the captions aloud:
 
 * Captions are written to be *read*. `spoken_form` rewrites them to be *heard* —
-  "POST /Users" becomes "post Users", "409" becomes "four oh nine", "kubectl"
-  becomes "cube control" — leaving the on-screen text untouched.
+  "GET /pods" becomes "get pods", "409" becomes "four oh nine", "kubectl" becomes
+  "cube control" — leaving the on-screen text untouched.
 * Positional connectives ("First… Then… Finally…") turn a list of captions into
   something that sounds like a narration.
 
@@ -210,7 +210,7 @@ STATUS_WORDS = {
 
 # Terms TTS engines reliably mangle. Keys are matched whole-word, case-insensitively.
 PRONUNCIATION = {
-    "scim": "skim", "etcd": "et see dee", "kubectl": "cube control",
+    "etcd": "et see dee", "kubectl": "cube control",
     "k8s": "kubernetes", "yaml": "yammel", "json": "jason", "sql": "sequel",
     "nginx": "engine ex", "oauth": "oh-auth", "jwt": "J W T", "idp": "I D P",
     "oidc": "O I D C", "crd": "C R D", "crds": "C R Ds", "xrd": "X R D",
@@ -281,7 +281,7 @@ def _lower_first(text):
     if not text:
         return text
     head, rest = text[0], text[1:]
-    # Leave acronyms and proper-looking tokens alone: "SCIM Connect maps…"
+    # Leave acronyms and proper-looking tokens alone: "API Server accepts…"
     first_word = text.split(" ", 1)[0]
     if first_word.isupper() or (len(first_word) > 1 and first_word[1].isupper()):
         return text

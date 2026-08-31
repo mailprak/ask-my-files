@@ -5,8 +5,8 @@ scenes. `animate.py` turns that data into frames. Keeping the two apart means th
 renderer is deterministic and testable without Ollama, and a malformed model
 response degrades to a clear error instead of a broken drawing.
 
-Topic-agnostic: SCIM flows, Kubernetes scheduling, goroutines and channels,
-KubeVela workflows — anything the notes describe as things talking to things.
+Topic-agnostic: Kubernetes scheduling, goroutines and channels, KubeVela
+workflows — anything the notes describe as things talking to things.
 """
 
 import json
@@ -215,7 +215,7 @@ def normalize(data):
         raise StoryboardError("storyboard must be a JSON object")
 
     raw_actors = data.get("actors") or data.get("nodes") or []
-    if isinstance(raw_actors, dict):                       # {"idp": {...}} form
+    if isinstance(raw_actors, dict):                       # {"api": {...}} form
         raw_actors = [{**v, "id": k} for k, v in raw_actors.items() if isinstance(v, dict)]
     if not isinstance(raw_actors, list) or not raw_actors:
         raise StoryboardError("storyboard has no actors")

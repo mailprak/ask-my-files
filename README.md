@@ -37,7 +37,8 @@ No keyword matching. No cloud. Everything stays on your machine.
 | **Ollama (llama3.2)** | Local LLM — synthesises answers from retrieved chunks |
 | **pdfplumber** | Extracts text from PDF files |
 | **Tesseract + pytesseract** | OCR — extracts text from images (PNG, JPG, etc.) |
-| **Pillow** | Opens image files for OCR processing |
+| **Pillow** | Opens image files for OCR processing — and draws the animated GIF storyboards frame by frame |
+| **say / espeak-ng / piper** | Offline text-to-speech — narrates a storyboard to a WAV that matches the GIF |
 
 ## Supported File Types
 
@@ -88,6 +89,9 @@ pip install uv
 ```bash
 uv sync
 ```
+
+`.venv/` is built for one platform. If the same folder is also used from a Linux container,
+rebuild it before running on the other side: `rm -rf .venv && uv sync`.
 
 **Option B — plain venv:**
 
@@ -161,6 +165,7 @@ Opens at `http://localhost:8501`. Features:
 - Sources panel — collapsible list of files used for the answer
 - Chat history — full conversation per session
 - Model switcher — swap between llama3.2, mistral, gemma2
+- 🎬 Visual Explanation — turn any answer into an animated storyboard GIF ([details](#-visual-explanation--animated-storyboards-from-any-answer))
 
 **Option B — CLI**
 
@@ -440,6 +445,200 @@ Example output:
 ```
 
 **Web UI:** Select a course, then use the **Teach Me** panel in the sidebar. Enter an optional day filter and click **🎓 Quiz Me**.
+
+---
+
+### 🎬 Visual Explanation — Animated Storyboards from Any Answer
+
+Turns a retrieved answer into a short animated GIF of the data flow: actors as labelled
+stations across the stage, requests travelling between them on routed arrows, processing
+states, and success or failure badges. Useful for anything with moving parts — a SCIM
+provisioning round trip, Pod scheduling, a goroutine sending on a channel, a Crossplane
+claim reconciling.
+
+Nothing about it is topic-specific: it works on every collection, personal files included.
+
+**How it works**
+
+```text
+Notes → ChromaDB → RAG → Ollama
+                           ↓
+                 ┌─────────┴─────────┐
+                 ↓                   ↓
+           Text answer        Storyboard JSON   ← second LLM pass, structured output
+                                     ↓
+                                  Pillow        ← deterministic frame-by-frame drawing
+                                     ↓
+                               Animated GIF
+```
+
+The LLM never draws anything. It emits a small JSON document — actors and scenes — and
+`animate.py` renders it with Pillow. That split is deliberate: the same storyboard always
+produces the same frames, the renderer needs no network, and a malformed model response
+fails with a readable message instead of a broken picture.
+
+**Storyboard schema**
+
+```json
+{
+  "title": "SCIM user provisioning",
+  "actors": [
+    {"id": "idp",    "label": "Identity Provider", "kind": "person"},
+    {"id": "scim",   "label": "SCIM Connect",      "kind": "service"},
+    {"id": "target", "label": "Target App",        "kind": "cloud"}
+  ],
+  "scenes": [
+    {"kind": "message", "from": "idp", "to": "scim", "label": "POST /Users",
+     "detail": "The source IdP sends a SCIM user resource."},
+    {"kind": "process", "at": "scim", "label": "Map attributes",
+     "detail": "Attributes are mapped onto the target schema."},
+    {"kind": "message", "from": "scim", "to": "target", "label": "POST /Users"},
+    {"kind": "message", "from": "target", "to": "scim", "label": "201 Created",
+     "status": "success"},
+    {"kind": "result", "at": "target", "label": "User provisioned", "status": "success",
+     "detail": "The account now exists downstream."}
+  ]
+}
+```
+
+| Field | Values |
+|---|---|
+| `actors[].kind` | `person`, `client`, `service`, `store`, `queue`, `cloud` — each drawn as a vector icon |
+| `scenes[].kind` | `message` (A → B), `process` (work at one actor), `result` (outcome badge) |
+| `scenes[].status` | `success` (green), `failure` (red), `info` (blue) |
+| `scenes[].label` | Short chip drawn on the arrow — an HTTP call, a verb phrase |
+| `scenes[].detail` | One sentence, drawn in the caption band, and the line spoken by narration |
+
+Forward messages route above the row and responses below, so arrows never cross a station.
+
+Caps: 5 actors, 8 scenes. Anything beyond is trimmed. Messy model output — wrong enum
+values, ids referenced by label, `nodes`/`steps` instead of `actors`/`scenes` — is
+repaired automatically; scenes pointing at actors that don't exist are dropped rather
+than drawn wrong. If the first response is unusable the model gets one repair round.
+
+**Web UI:** ask a question, then click **🎬 Visual Explanation** under the answer. The GIF
+plays inline and is written to `out/<question-slug>-<timestamp>.gif` in the project root —
+the path is shown under the animation. It is also cached on that message, so switching
+collections or asking again won't rebuild it. **⬇️ Save GIF** downloads a copy through the
+browser, **🔁 Regenerate** rerolls (keeping the earlier file), and **🧩 Storyboard JSON**
+shows the data the drawing came from. Toggle the whole feature off in the sidebar under
+**Visuals**, where there's also an animation speed slider.
+
+**CLI:**
+
+```bash
+uv run ask.py --course kubernetes --visual "what happens when I create a Pod?"
+uv run ask.py --course golang --visual --out out/channels.gif "how do goroutines use channels?"
+uv run ask.py --cross --visual "how does a Crossplane claim become real infrastructure?"
+```
+
+The GIF lands in `out/<query>.gif` unless `--out` says otherwise, and `--speed 1.5` plays
+it faster. `--visual` has no effect with `--quiz` — a quiz has no flow to animate.
+
+### 🔊 Narration
+
+GIF has no audio track — the format cannot carry sound. So there are two outputs, chosen
+with the **Output** switch in the sidebar or `--mp4` on the CLI:
+
+| Output | What you get |
+|---|---|
+| **GIF** | Silent animation, plus a `.wav` of the same length beside it. Autoplays inline anywhere — chat, wikis, README files |
+| **MP4** | **One file** with the narration inside it. Full colour (no 256-entry palette), usually smaller, and it seeks and scrubs. Needs a player |
+
+MP4 is encoded by **PyAV** (`uv sync` installs it), which loads FFmpeg as a library
+in-process. That matters on a managed Mac: there is no downloaded executable for Gatekeeper
+to block, which is what happens to pip-bundled ffmpeg binaries. A system `ffmpeg` is used
+instead when one is present and actually runnable. The five-scene demo comes out around
+110 KB silent, 455 KB narrated.
+
+Speech is synthesised offline by whatever TTS engine is already on the machine; nothing is
+downloaded and nothing leaves it.
+
+| Platform | Engine | Install |
+|---|---|---|
+| macOS | `say` | already there |
+| Linux | `espeak-ng` | `sudo apt install espeak-ng` |
+| either | `piper` | set `PIPER_MODEL`, or drop a `.onnx` in `./voices/` |
+| either | `flite` | `sudo apt install flite` |
+
+**Voice.** On macOS the default is **Daniel**, falling back to the system voice when it is
+not installed. Better ones are a free download — System Settings → Accessibility → Spoken
+Content → System Voice → Manage Voices adds the Premium voices (**Ava**, **Zoe**, **Evan**)
+and Enhanced versions of the built-ins, including Daniel — then pick one in the sidebar or
+with `--voice`. On Linux, `piper` is the quality option: drop a `.onnx` model into
+`./voices/` or point `PIPER_MODEL` at one.
+
+```bash
+uv run narrate.py --voices        # what this machine can speak with
+```
+
+**Captions are rewritten for the ear.** The on-screen text is untouched, but the spoken
+copy gets fixed up first, because TTS engines mangle technical prose:
+
+| Written | Spoken |
+|---|---|
+| `POST /Users` | "POST Users" — not "post slash users" |
+| `201 Created` | "two oh one Created" — not "two hundred and one" |
+| `userName`, `externalId` | "user Name", "external Id" |
+| `SCIM`, `etcd`, `kubectl` | "skim", "et see dee", "cube control" |
+| `SCIM Connect — user provisioning` | "skim Connect, user provisioning" |
+
+Lines are then joined with positional connectives — *First… Then… Next… After that…
+Finally…* — and topped and tailed with an intro and a closing line, so it plays as a
+narration rather than a list of captions read aloud. Nothing here needs an LLM.
+
+**Optional rewrite pass.** Tick **✍️ Rewrite captions for speech** (or `--rewrite`) to
+spend one more LLM call turning the captions into spoken prose before the connectives are
+applied. Better phrasing, but non-deterministic — a wrong-shaped answer is discarded and
+the captions are used instead. The final script is shown under **📝 Narration script**.
+
+**Timing.** The narration is generated *first*, and each spoken line's length sets a
+minimum duration for its beat; the animation then holds that beat long enough to cover it.
+So the GIF and the WAV come out the same length to the millisecond and loop together
+instead of drifting apart. A narrated GIF therefore runs slower than a silent one, and the
+speed slider is ignored while narrating — real time is what keeps them in step. Dead air
+at the ends of each clip is trimmed so the pacing stays tight.
+
+**Web UI:** turn on **🔊 Narrate** in the sidebar before clicking 🎬, then choose a voice
+and speed. With **GIF** you get an audio player under the animation and a `.wav` beside the
+GIF in `out/`; with **MP4** you get a single video with the sound already in it. The toggle
+is disabled with a note when no engine is installed.
+
+**CLI:**
+
+```bash
+uv run ask.py --course kubernetes --visual --narrate --mp4 "what happens when I create a Pod?"
+uv run ask.py --course golang --visual --narrate --voice Ava --rate 150 "how do channels work?"
+uv run ask.py --course kubevela --visual --narrate --rewrite "how does a workflow run?"
+
+uv run narrate.py --demo out/demo.wav           # narrate the built-in board, no LLM
+uv run narrate.py --demo --print                # see the script without synthesising
+uv run animate.py --demo out/demo.mp4           # silent video
+uv run animate.py --demo out/demo.mp4 --audio out/demo.wav   # video with sound
+```
+
+`--tts` picks the engine, `--voice` the voice within it, `--rate` the words per minute
+(default 160). If synthesis fails, the animation is still produced — silently, with the
+reason reported.
+
+---
+
+**Render without an LLM.** `animate.py` is a standalone renderer, handy for tuning the
+look or checking the pipeline while Ollama is off:
+
+```bash
+uv run animate.py --demo out/demo.gif                 # built-in SCIM storyboard
+uv run animate.py --json board.json out/board.gif     # your own storyboard JSON
+uv run animate.py --demo out/demo.gif --png out/f.png # + one still per scene
+uv run animate.py --demo out/demo.webp                # WebP: full colour, no 256-colour cap
+```
+
+Editing the storyboard JSON by hand and re-rendering is the reliable way to get a polished
+result — the model gets you 90% there, and one edited label or reordered scene finishes it.
+
+**A note on size.** Frames are drawn at 2× and downsampled for antialiasing, then encoded
+with one palette shared across the whole animation and inter-frame deltas, which keeps the
+five-scene demo near 160 KB. Pass a `.webp` path for a full-colour version.
 
 ---
 

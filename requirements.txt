@@ -6,3 +6,4 @@ ollama
 pdfplumber==0.11.9
 pytesseract==0.3.13
 Pillow==12.2.0
+av>=12.0.0

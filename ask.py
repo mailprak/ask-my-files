@@ -1,4 +1,5 @@
 import chromadb
+import os
 import sys
 import argparse
 import re
@@ -11,6 +12,23 @@ parser.add_argument("--course", type=str, help="Query a specific course (e.g., -
 parser.add_argument("--cross", action="store_true", help="Query all course collections comparatively")
 parser.add_argument("--quiz", nargs="?", const="", default=None, metavar="DAY",
                     help="Generate a quiz. Optional day filter e.g. --quiz day-13")
+parser.add_argument("--visual", action="store_true",
+                    help="Also render an animated GIF storyboard of the answer")
+parser.add_argument("--out", type=str, default=None, metavar="PATH",
+                    help="Where to write the --visual GIF (default: out/<query>.gif)")
+parser.add_argument("--mp4", action="store_true",
+                    help="Write one MP4 with the narration inside it, instead of GIF + WAV")
+parser.add_argument("--speed", type=float, default=1.0, help="Animation speed for --visual")
+parser.add_argument("--narrate", action="store_true",
+                    help="Speak the storyboard to a matching .wav next to the GIF")
+parser.add_argument("--tts", type=str, default=None, metavar="ENGINE",
+                    help="TTS engine (say, piper, espeak-ng, espeak, flite)")
+parser.add_argument("--voice", type=str, default=None, metavar="NAME",
+                    help="Voice name — list them with: uv run narrate.py --voices")
+parser.add_argument("--rate", type=int, default=None, metavar="WPM",
+                    help="Narration speed in words per minute (default 160)")
+parser.add_argument("--rewrite", action="store_true",
+                    help="Extra LLM pass to turn the captions into spoken prose")
 parser.add_argument("query", nargs="*", help="Your question")
 args = parser.parse_args()
 
@@ -38,6 +56,76 @@ def print_answer(answer: str):
             print(f"  {line[:WIDTH - 4]}")
             line = line[WIDTH - 4:]
         print(f"  {line}")
+
+
+def render_visual(question: str, answer: str, context: str, topic: str = ""):
+    """--visual: storyboard the answer and write an animated GIF."""
+    import animate
+    import storyboard
+
+    ext = "mp4" if args.mp4 else "gif"
+    path = args.out
+    if not path:
+        slug = re.sub(r"[^a-z0-9]+", "-", question.lower()).strip("-")[:48] or "storyboard"
+        path = os.path.join("out", f"{slug}.{ext}")
+
+    print("\n  🎬 Building visual storyboard…")
+    try:
+        board = storyboard.generate_storyboard(
+            question=question, answer=answer, context=context, topic=topic
+        )
+    except storyboard.StoryboardError as exc:
+        print(f"  ⚠️  Could not build a storyboard: {exc}")
+        return
+    except Exception as exc:
+        print(f"  ⚠️  Visual failed: {exc}")
+        return
+
+    # Narrate first — the spoken lines set how long each beat must be held.
+    min_shot_ms, wav_path, wav_bytes = None, None, None
+    if args.narrate:
+        import narrate
+
+        # With MP4 the audio lives inside the file — no sidecar WAV.
+        wav_path = None if args.mp4 else os.path.splitext(path)[0] + ".wav"
+        override = narrate.rewrite_script(board) if args.rewrite else None
+        if args.rewrite and override is None:
+            print("  ⚠️  LLM rewrite unusable — narrating the captions instead")
+        script = narrate.script_for(board, lines_override=override)
+
+        print("  🔊 Recording narration…")
+        try:
+            wav_bytes, min_shot_ms, engine = narrate.build_narration(
+                board, wav_path, engine=args.tts, voice=args.voice,
+                rate=args.rate or narrate.DEFAULT_RATE, script=script)
+            print(f"     {engine}, voice: {args.voice or 'default'}"
+                  + (f" → {wav_path}" if wav_path else " (muxed into the MP4)"))
+        except narrate.NarrationError as exc:
+            print(f"  ⚠️  {exc}")
+            min_shot_ms, wav_path, wav_bytes = None, None, None
+
+    speed = 1.0 if min_shot_ms else args.speed
+    try:
+        if args.mp4:
+            data = animate.render_video(board, path, speed=speed,
+                                        min_shot_ms=min_shot_ms, audio=wav_bytes)
+        else:
+            data = animate.render_gif(board, path, speed=speed,
+                                      min_shot_ms=min_shot_ms)
+    except Exception as exc:
+        print(f"  ⚠️  Render failed: {exc}")
+        return
+
+    print(f"     {board['title']} — {len(board['scenes'])} scenes")
+    for i, scene in enumerate(board["scenes"], 1):
+        if scene["kind"] == "message":
+            arrow = f"{scene['from']} → {scene['to']}"
+        else:
+            arrow = f"@ {scene['at']}"
+        print(f"     {i}. [{scene['kind']}] {arrow}: {scene['label']}")
+    print(f"\n  🖼️  {path} ({len(data) / 1024:.0f} KB)")
+    if wav_path:
+        print(f"  🔉 {wav_path} — same length as the GIF, play them together")
 
 
 # ── Cross-course branch ────────────────────────────────────────────────────────
@@ -83,10 +171,11 @@ if args.cross:
     )
 
     print_box_header("🔀 Cross-Course: ", query)
-    print_answer(
+    answer = (
         ollama.chat(model="llama3.2", messages=[{"role": "user", "content": prompt}])
         ["message"]["content"].strip()
     )
+    print_answer(answer)
 
     print()
     print("  📂 Sources by course:")
@@ -97,6 +186,10 @@ if args.cross:
             label = meta.get("folder", "")
             print(f"       • {meta['source']} [{label}]")
     print()
+
+    if args.visual:
+        render_visual(query, answer, context, topic="cross-course")
+        print()
     sys.exit(0)
 
 
@@ -105,6 +198,8 @@ if args.quiz is not None:
     if not args.course:
         print("❌ --quiz requires --course. e.g. --quiz --course golang")
         sys.exit(1)
+    if args.visual:
+        print("⚠️  --visual has no effect with --quiz (a quiz has no flow to animate).")
 
     collection_name = f"course_{args.course}"
     try:
@@ -257,3 +352,7 @@ for meta in metas:
     label = meta.get("folder", "")
     print(f"     • {meta['source']} [{label}]")
 print()
+
+if args.visual:
+    render_visual(query, answer, context, topic=args.course or "personal files")
+    print()
